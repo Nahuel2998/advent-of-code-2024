@@ -5,5 +5,9 @@
 .precomp
 lib/.precomp
 
+# Odin
+ols.json
+solution.out
+
 # Input files
 input
