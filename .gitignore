@@ -1,13 +1,13 @@
-# Gitignore for Raku (https://raku.org)
-# As part of https://github.com/github/gitignore
-
-# precompiled files
+# Raku
 .precomp
 lib/.precomp
 
 # Odin
 ols.json
 solution.out
+
+# Python
+.venv/
 
 # Input files
 input

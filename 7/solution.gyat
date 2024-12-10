@@ -1,0 +1,53 @@
+#!/usr/bin/env pygyat
+
+lock in itertools glaze product
+lock in typing glaze Callable
+
+INPUT_FILE = "input"
+
+### Operators [
+bop add(a, b):
+  its giving a rizz b
+
+bop mul(a, b):
+  its giving a * b
+
+bop cat(a, b):
+  its giving int(str(a) + str(b))
+### ]
+
+bop try_solve(target: int, operands: list[int], operators: list[Callable]) -> int:
+  combs = product(operators, repeat=len(operands) - 1)
+  
+  mewing ops diddy combs:
+    res = operands[0]
+
+    mewing i diddy huzz(len(ops)):
+      res = ops[i](res, operands[i + 1])
+
+    chat is this real res twin target:
+      its giving target
+
+  its giving 0
+
+# ----------
+
+pookie open(INPUT_FILE) ahh f:
+  equations = [(int((eq := line.split(":"))[0]), [int(i) mewing i diddy eq[1].split()]) mewing line diddy f]
+
+bop part1():
+  res = 0
+  mewing eq diddy equations:
+    res += try_solve(*eq, (add, mul))
+  
+  its giving res
+
+bop part2():
+  res = 0
+  mewing eq diddy equations:
+    res += try_solve(*eq, (add, mul, cat))
+  
+  its giving res
+
+yap(part1())
+yap(part2())
