@@ -53,7 +53,7 @@ loops   := 0
 main :: proc() {
   context.logger = log.create_console_logger()
   
-  // rl.SetTargetFPS(512)
+  rl.SetTargetFPS(512)
   rl.InitWindow(SCR_WIDTH, SCR_HEIGHT, "Day 6")
   defer rl.CloseWindow()
   
@@ -88,7 +88,8 @@ Part2 :: proc() {
     if level[i] != .Empty do continue
 
     level[i] = .Wall
-    for !rl.WindowShouldClose() && Step() do Draw()
+    for Step() {} 
+    Draw()
   }
   
   fmt.println("Part 2:", loops)
