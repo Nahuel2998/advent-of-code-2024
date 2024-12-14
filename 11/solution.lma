@@ -1,0 +1,11 @@
+blink :: {
+  0          -> 1      ;
+  lngth %% 2 -> splt   ;
+  True       -> * 2024 ;
+}
+
+^25 blink
+<- Part 1: 
+
+^50 blink
+<- Part 2: 
