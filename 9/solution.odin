@@ -12,8 +12,8 @@ SCR_WIDTH  :: SCR_HEIGHT
 CANVAS_WIDTH :: 315
 // CANVAS_WIDTH :: 20 
 
-LEVEL_FILENAME :: "input"
-// LEVEL_FILENAME :: "example"
+DISK_FILENAME :: "input"
+// DISK_FILENAME :: "example"
 
 camera : rl.Camera2D
 disk   : [dynamic]int
@@ -37,7 +37,7 @@ main :: proc() {
   
   rl.SetTargetFPS(60)
   // rl.SetTargetFPS(1)
-  rl.InitWindow(SCR_WIDTH, SCR_HEIGHT, "Day 6")
+  rl.InitWindow(SCR_WIDTH, SCR_HEIGHT, "Day 9")
   defer rl.CloseWindow()
   
   Load()
@@ -64,7 +64,7 @@ Solve :: proc(Step : proc()) {
 }
 
 Load :: proc() {
-  disk_data := os.read_entire_file(LEVEL_FILENAME, context.temp_allocator) or_else log.panicf("what where")
+  disk_data := os.read_entire_file(DISK_FILENAME, context.temp_allocator) or_else log.panicf("what where")
   disk, files = make([dynamic]int), make([dynamic]File)
 
   file, is_file := 0, true
