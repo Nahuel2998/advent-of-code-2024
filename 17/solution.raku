@@ -59,6 +59,21 @@ class Interpreter {
   sub decompile(+@instructions --> Str:D) {
     @instructions.map(-> $inst, $_ { "@insts[$inst] @opnds[$_]" }).join: "\n"
   }
+
+  method reverse(Int:D $solution = 0) {
+    if $solution > 8 ** 15 { return $solution }
+
+    |gather for 0..7 {
+      my $a = $_ + $solution +< 3;
+
+      self.reset: $a;
+      self.run: :quiet;
+
+      if @!instructions[*-@!res..*] eq @!res && self.reverse: $a -> $_ {
+        .take
+      }
+    }
+  }
 }
 
 grammar Input {
@@ -90,5 +105,12 @@ sub MAIN(Str:D $file) {
   say $interpreter; 
   say $interpreter.decompiled; 
   say "- - - - - - -";
+  say "Part 1:";
   $interpreter.run;
+  say "- - - - - - -";
+  say "Part 2:";
+  my $res = $interpreter.reverse;
+  say $res;
+  $interpreter.reset: $res[0];
+  $interpreter.run: :debug;
 }
