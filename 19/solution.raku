@@ -19,8 +19,8 @@ sub MAIN(Str:D $file) {
   }
   say "- - - - - - -";
   # NOTE: Previously I had solved Part 1 with grep alone
-  #       But when I tried it using Raku regexes, the number was 12 lower than expected...
-  #       Probably has to do with backtracking or/and an evil optimization, should likely be reported
+  #       Raku's regex engine hangs on the first impossible pattern, possibly due to catastrophic backtracking
+  #       So this will do instead
   say "Part 1: ", @patterns».&solve».Bool.sum;
   say "Part 2: ", @patterns».&solve.sum;
 }
