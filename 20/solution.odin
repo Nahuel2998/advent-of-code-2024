@@ -14,6 +14,9 @@ LEVEL_FILENAME :: "input"
 
 MIN_BETTER :: 50 when LEVEL_FILENAME == "example" else 100 
 
+// PART :: 1
+PART :: 2
+
 camera : rl.Camera2D
 
 pos        : Position
@@ -59,8 +62,8 @@ main :: proc() {
   defer rl.CloseWindow()
   
   Load()
-  // Part1()
-  Part2()
+  when PART == 1 do Part1()    
+  else           do Part2()
 }
 
 Part1 :: proc() {
@@ -204,20 +207,30 @@ Draw :: proc() {
       }
     }
 
-    from := track_r[track_i % i32(len(track))]
-    rl.DrawPixel(from.x, from.y, rl.PURPLE)
-    for to in shortcuts[from] {
-      s := [2]rl.Vector2{ 
-        { f32(from.x) + 0.5, f32(from.y) + 0.5 }, 
-        { f32(  to.x) + 0.5, f32(  to.y) + 0.5 } 
-      }
-      rl.DrawLineStrip(raw_data(s[:]), 2, rl.MAGENTA)
-      rl.DrawPixel(to.x, to.y, rl.DARKPURPLE)
+    when PART == 1 {
+      for from in shortcuts do drawShortcutsFor(from)
+    } else {
+      drawShortcutsFor(track_r[track_i % i32(len(track))])
+      track_i += 1
     }
-    track_i += 1
   }
   rl.EndMode2D()
   
   rl.DrawFPS(10, 10)
   rl.EndDrawing()
+}
+
+drawShortcutsFor :: proc(from : Position) {
+  shs := shortcuts[from] 
+  if len(shs) == 0 do return
+
+  rl.DrawPixel(from.x, from.y, rl.PURPLE)
+  for to in shs {
+    s := [2]rl.Vector2{ 
+      { f32(from.x) + 0.5, f32(from.y) + 0.5 }, 
+      { f32(  to.x) + 0.5, f32(  to.y) + 0.5 } 
+    }
+    rl.DrawPixel(to.x, to.y, rl.DARKPURPLE)
+    rl.DrawLineStrip(raw_data(s[:]), 2, rl.MAGENTA)
+  }
 }
