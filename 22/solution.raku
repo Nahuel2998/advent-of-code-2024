@@ -35,5 +35,5 @@ sub MAIN(Str:D $file) {
 
   my @offers = @nums.race».map: * mod 10;
   my %gains  = @offers.race.map(&gains).flat.classify: *.key, :as(*.value);
-  say "Part 2: ", %gains.max(*.value.sum)[0].value.sum;
+  say "Part 2: ", %gains.max(*.value.sum).value.sum;
 }
