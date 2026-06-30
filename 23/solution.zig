@@ -1,10 +1,11 @@
 const std = @import("std");
 
+const ComputerSet = std.AutoArrayHashMapUnmanaged(Computer, void);
 const Computer    = [2]u8;
 const Triplet     = [3]Computer;
 const Connections = struct {
     allocator: std.mem.Allocator,
-    conns:     std.AutoHashMapUnmanaged(Computer, std.AutoArrayHashMapUnmanaged(Computer, void)),
+    conns:     std.AutoHashMapUnmanaged(Computer, ComputerSet),
 
     pub fn init(allocator: std.mem.Allocator, input: []const u8) !Connections {
         var self: Connections = .{
@@ -42,12 +43,7 @@ const Connections = struct {
                 for (others[(i + 1)..]) |c3| {
                     if (self.conns.get(c2).?.contains(c3)) {
                         var key = [_]Computer{ c1, c2, c3 };
-                        const lessThan = struct {
-                            fn lessThan(_: void, lhs: Computer, rhs: Computer) bool {
-                                return std.mem.lessThan(u8, &lhs, &rhs);
-                            }
-                        }.lessThan;
-                        std.mem.sortUnstable(Computer, &key, {}, lessThan);
+                        std.mem.sortUnstable(Computer, &key, {}, computerLessThan);
                         try res.put(self.allocator, key, {});
                     }
                 }
@@ -55,6 +51,42 @@ const Connections = struct {
         }
 
         return res.keys();
+    }
+
+    // NOTE: I'm not sure this works with all inputs
+    //       It's the first I thought of and it works with my input
+    //       I wonder if ordering can screw it up...?
+    pub fn groups(self: Connections) ![]ComputerSet {
+        var res: std.ArrayList(ComputerSet) = .empty;
+
+        var it = self.conns.iterator();
+        while (it.next()) |conn| {
+            const c1     = conn.key_ptr.*;
+            const others = conn.value_ptr.keys();
+            for (others) |c2| {
+                var found = false;
+                next_group: for (res.items) |*grp| {
+                    if (!grp.contains(c1))                 continue;
+                    if ( grp.contains(c2)) { found = true; continue; }
+
+                    for (grp.keys()) |e| {
+                        if (!self.conns.get(e).?.contains(c2)) {
+                            continue :next_group;
+                        }
+                    }
+                    found = true;
+                    try grp.put(self.allocator, c2, {});
+                }
+                if (!found) {
+                    var newgrp: ComputerSet = .empty;
+                    try newgrp.put(self.allocator, c1, {});
+                    try newgrp.put(self.allocator, c2, {});
+                    try res.append(self.allocator, newgrp);
+                }
+            }
+        }
+
+        return res.items;
     }
 
     pub fn print(self: Connections) void {
@@ -69,13 +101,16 @@ const Connections = struct {
     }
 };
 
+fn computerLessThan(_: void, lhs: Computer, rhs: Computer) bool {
+    return std.mem.lessThan(u8, &lhs, &rhs);
+}
+
 pub fn countChiefHistorianTriplets(triplets: []Triplet) u32 {
     var res: u32 = 0;
     for (triplets) |triplet| {
         for (triplet) |c| {
             if (c[0] == 't') {
                 res += 1;
-                std.debug.print("{s},{s},{s}\n", .{ triplet[0], triplet[1], triplet[2] });
                 break;
             }
         }
@@ -83,14 +118,44 @@ pub fn countChiefHistorianTriplets(triplets: []Triplet) u32 {
     return res;
 }
 
-pub fn main(init: std.process.Init) !void {
-    const input = @embedFile("input");
+pub fn findLargestGroup(groups: []ComputerSet) []Computer {
+    var maxlen: usize = 0;
+    var res: ComputerSet = undefined;
+    for (groups) |grp| {
+        const glen = grp.count();
+        if (glen > maxlen) {
+            res    = grp;
+            maxlen = glen;
+        }
+    }
+    return res.keys();
+}
 
-    const conns = try Connections.init(init.arena.allocator(), input);
+pub fn part2(allocator: std.mem.Allocator, groups: []ComputerSet) ![]u8 {
+    var res: std.ArrayList(u8) = .empty;
+
+    const largestGroup = findLargestGroup(groups);
+    std.mem.sortUnstable(Computer, largestGroup, {}, computerLessThan);
+    for (largestGroup) |c| {
+        try res.appendSlice(allocator, &c);
+        try res.append(allocator, ',');
+    }
+
+    return res.items[0..res.items.len - 1];
+}
+
+pub fn main(init: std.process.Init) !void {
+    const input     = @embedFile("input");
+    const allocator = init.arena.allocator();
+
+    const conns = try Connections.init(allocator, input);
     conns.print();
 
     const triplets = try conns.triplets();
-    std.debug.print("{}\n", .{ countChiefHistorianTriplets(triplets) });
+    std.debug.print("Part 1: {}\n", .{ countChiefHistorianTriplets(triplets) });
+
+    const groups = try conns.groups();
+    std.debug.print("Part 2: {s}\n", .{ try part2(allocator, groups) });
 }
 
 test "example" {
@@ -104,4 +169,7 @@ test "example" {
 
     const triplets = try conns.triplets();
     try std.testing.expectEqual(7, countChiefHistorianTriplets(triplets));
+
+    const groups = try conns.groups();
+    try std.testing.expectEqualStrings("co,de,ka,ta", try part2(arena.allocator(), groups));
 }
