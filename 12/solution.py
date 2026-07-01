@@ -45,23 +45,21 @@ class Island:
 
   # Beautiful is better than ugly
   sides = lambda self: (
-    cells := (
-      ft := __import__("functools")).reduce(
-        lambda acc, p: ((b := __import__("bisect")).insort(acc[0][p[0]], p[1]), b.insort(acc[1][p[1]], p[0])) and acc,
-        self.cells,
-        ((dd := __import__("collections").defaultdict)(list), dd(list)),
-      )
+    cells := (ft := __import__("functools")).reduce(
+      lambda acc, p: ((b := __import__("bisect")).insort(acc[0][p[0]], p[1]), b.insort(acc[1][p[1]], p[0])) and acc,
+      self.cells,
+      ((dd := __import__("collections").defaultdict)(list), dd(list)),
+    )
   ) and sum(
     ft.reduce(
       lambda acc, b: (
-        lambda lasts, sides, cell, i: (sides, lasts) if self.__isOneOfUs(matsum(cell, DIRS[3 - i])) else (sides + 1, ls) if (ls := (lasts[0], cell[i < 2]) if i % 2 else (cell[i < 2], lasts[1])) and lasts[i % 2] != cell[i < 2] - 1 else (sides, ls)
-      )(acc[1], acc[0], (b, a) if j else (a, b), i + 2*j),
+        lambda lasts, sides, cell: (sides, lasts) if self.__isOneOfUs(matsum(cell, DIRS[3 - i])) else (sides + 1, ls) if (ls := (lasts[0], cell[j]) if (k := i % 2) else (cell[j], lasts[1])) and lasts[k] != cell[j] - 1 else (sides, ls)
+      )(acc[1], acc[0], (a, b) if (j := i < 2) else (b, a)),
       bs,
       (0, [-2] * 2)
     )[0]
-    for i in range(2)
-    for j in range(2)
-    for a, bs in cells[j].items()
+    for i in range(4)
+    for a, bs in cells[i > 1].items()
   )
 
   __isOneOfUs = lambda self, curr: not oob(curr) and grid[curr[0]][curr[1]] == self.char
