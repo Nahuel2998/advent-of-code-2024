@@ -1,6 +1,7 @@
 // This is my first time on zig, this likely sucks
 const std = @import("std");
 
+const MAX = std.math.maxInt(u32);
 const DIR: [4]Pos = .{
     .{.x =  1, .y =  0}, // east
     .{.x =  0, .y =  1}, // south
@@ -20,8 +21,19 @@ const Pos  = struct {
     }
 };
 const Cell = struct {
-    solid: bool,
-    cost:  u32 = 0,
+    solid:    bool ,
+    cost:   [4]u32 = .{ MAX, MAX, MAX, MAX },
+    restable: bool = false,
+
+    fn minCost(self: Cell) u32 {
+        var min: u32 = MAX;
+        for (self.cost) |cost| {
+            if (cost < min) {
+                min = cost;
+            }
+        }
+        return min;
+    }
 };
 const Grid = struct {
     width:  usize,
@@ -83,14 +95,46 @@ const Grid = struct {
         return posy * self.width + posx;
     }
 
+    fn calculateCosts(self: *Grid, pos: Pos, dir: u2, cost: u32) void {
+        var cell = self.cellAt(pos);
+        if (cell.solid) return;
+
+        if (cell.cost[dir] <= cost) return;
+
+        cell.cost[dir] = cost;
+        for ([_]u2{ dir, dir +% 1, dir -% 1 }) |cdir| {
+            const turnCost = if (dir != cdir) @as(u32, 1000) else 0;
+            self.calculateCosts(pos.add(DIR[cdir]), cdir, cost + 1 + turnCost);
+        }
+    }
+
+    fn findRestables(self: *Grid, pos: Pos, dir: u2, maxCost: u32) void {
+        var cell = self.cellAt(pos);
+        cell.restable = true;
+
+        if (std.meta.eql(pos, self.start)) return;
+
+        const newPos  = pos.add(DIR[dir +% 2]);
+        const newCell = self.cellAt(newPos);
+        if (newCell.solid) return;
+
+        for ([_]u2{ dir, dir +% 1, dir -% 1 }) |cdir| {
+            const turnCost = if (dir != cdir) @as(u32, 1000) else 0;
+            const newCost  = maxCost - (1 + turnCost);
+            if (newCell.cost[cdir] != newCost) continue;
+
+            self.findRestables(newPos, cdir, newCost);
+        }
+    }
+
     fn print(self: *Grid) void {
         for (0..self.height) |y| {
             for (0..self.width) |x| {
                 const cell = self.cellAt(.{.x = @intCast(x), .y = @intCast(y)});
                 if (cell.solid) {
                     std.debug.print("#", .{});
-                // } else if (cell.restable) {
-                //     std.debug.print("O", .{});
+                } else if (cell.restable) {
+                    std.debug.print("O", .{});
                 } else {
                     std.debug.print(".", .{});
                 }
@@ -106,28 +150,31 @@ pub fn main(init: std.process.Init) !void {
     const input = @embedFile("input");
     var   grid  = try Grid.fromInput(alloc, input);
     std.debug.print("Part 1: {}\n", .{part1(&grid)});
-    // std.debug.print("Part 2: {}\n", .{part2(&grid)});
+    std.debug.print("Part 2: {}\n", .{part2(&grid)});
+    // grid.print();
 }
 
 fn part1(grid: *Grid) u32 {
-    calculateCosts(grid, grid.start, 0, 0);
-    return grid.cellAt(grid.end).cost;
+    grid.calculateCosts(grid.start, 0, 0);
+    return grid.cellAt(grid.end).minCost();
 }
 
-fn calculateCosts(grid: *Grid, pos: Pos, dir: u2, cost: u32) void {
-    var cell = grid.cellAt(pos);
-    if (cell.solid) {
-        return;
+fn part2(grid: *Grid) u32 {
+    const endCell = grid.cellAt(grid.end);
+    const cost    = endCell.minCost();
+    for (0..4) |dir| {
+        if (endCell.cost[dir] == cost) {
+            grid.findRestables(grid.end, @intCast(dir), cost);
+        }
     }
 
-    if (cell.cost != 0 and cell.cost <= cost) {
-        return;
+    var res: u32 = 0;
+    for (grid.data) |cell| {
+        if (cell.restable) {
+            res += 1;
+        }
     }
-
-    cell.cost = cost;
-    calculateCosts(grid, pos.add(DIR[dir     ]), dir     , cost + 1);
-    calculateCosts(grid, pos.add(DIR[dir +% 1]), dir +% 1, cost + 1 + 1000);
-    calculateCosts(grid, pos.add(DIR[dir -% 1]), dir -% 1, cost + 1 + 1000);
+    return res;
 }
 
 test "example" {
@@ -139,18 +186,9 @@ test "example" {
     var grid = try Grid.fromInput(arena.allocator(), input);
 
     const p1 = part1(&grid);
-    // const p2 = part2(&grid);
-    std.debug.print(
-        "{}, {}, {}, {}",
-        .{
-            grid.cellAt(.{.x = 4, .y = 7}),
-            grid.cellAt(.{.x = 5, .y = 7}),
-            grid.cellAt(.{.x = 6, .y = 7}),
-            grid.cellAt(.{.x = 5, .y = 8}),
-        },
-    );
+    const p2 = part2(&grid);
     grid.print();
 
     try std.testing.expectEqual(7036, p1);
-    // try std.testing.expectEqual(45,   p2);
+    try std.testing.expectEqual(45,   p2);
 }
